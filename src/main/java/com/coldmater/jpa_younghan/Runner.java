@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
+import java.util.List;
 
 @Component
 public class Runner implements ApplicationRunner {
@@ -75,6 +76,29 @@ public class Runner implements ApplicationRunner {
         } finally {
             em2.close();
         }
+
+        //JPQL
+        // JPA 를 사용하면서도 복잡한 쿼링을 지원하기 위한 기능, 결국 JPA 를 사용하다보면 기승전쿼리
+        // JPA 를 사용하면 엔티티 객체를 중심으로 개발을 하게 되는데, 데이터베이스에서 필터링을 하여 가져와야 하는 경우,
+        // 테이블을 기준으로 하는것이 아닌 객체를 대상으로 검색할 수 있게 해줌.
+        // 결국 JPA 를 사용하여 객체 중심으로 개발을 하면서도 검색 조건이 포함된 SQL 쿼링을 객체를 대상으로 하기 위한 기술이다.
+        // 따라서 객체지향 SQL 이라고 할 수 있겠다. (dialect 에 맞게 sql 이 다시 날아간다.)
+        // sql 쓰신 분들은 1~2시간 공부하면 다 쓸 수 있다.
+        EntityManager em3 = emf.createEntityManager();
+
+        //이 때, m 은 테이블이라기보다는 객체의 개념이라고 보면 된다.
+        //setFirstResult, setMaxResults 같은 개념은 페이지네이션 개념과 대응되는데,
+        //dialect 를 바꾸면 그 DB 언어에 따라서 알아서 쿼링한다.(ex - Oracle 에서는 rownum, 일반(ansi)적으로는 limit, offset)
+        List<Member> loadedMembers = em3.createQuery("select m from Member as m", Member.class)
+                .setFirstResult(5)
+                .setMaxResults(8)
+                .getResultList();
+
+        for (Member member: loadedMembers) {
+            System.out.println("member.name = " + member.getName());
+        }
+
+        em3.close();
 
         emf.close();
     }
